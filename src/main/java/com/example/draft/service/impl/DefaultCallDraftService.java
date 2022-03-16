@@ -2,6 +2,7 @@ package com.example.draft.service.impl;
 
 import com.example.draft.model.Draft;
 import com.example.draft.model.DraftDto;
+import com.example.draft.model.DraftRequest;
 import com.example.draft.model.Person;
 import com.example.draft.repository.DraftRepository;
 import com.example.draft.service.api.CallDraftService;
@@ -11,16 +12,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class DefaultCallDraftService implements CallDraftService {
 
     private final DraftRepository repository;
-    private final RestTemplate restTemplate;
     private final PersonService personService;
 
-    public DefaultCallDraftService(DraftRepository repository, RestTemplate restTemplate, PersonService personService) {
+    public DefaultCallDraftService(DraftRepository repository, PersonService personService) {
         this.repository = repository;
-        this.restTemplate = restTemplate;
         this.personService = personService;
     }
 
@@ -39,19 +41,25 @@ public class DefaultCallDraftService implements CallDraftService {
         return saveDraft(draft);
     }
 
+    @Override
+    public List<Draft> findDraftListByPersonId(Integer personId) {
+        return repository.findDraftByPersonIdAndStatus(personId,null);
+    }
+
+    @Override
+    public void updateDraftStatus(DraftRequest draftRequest) {
+        List<Integer> integerList=new ArrayList<>(draftRequest.getDraftList().size());
+        draftRequest.getDraftList().forEach(n->integerList.add(n.getId()));
+        List<Draft> draftListByIds = repository.findDraftListByIds(integerList);
+        draftListByIds.forEach(n->n.setStatus(1));
+        repository.saveAll(draftListByIds);
+    }
+
     public Draft saveDraft(Draft draft) {
         return repository.save(draft);
     }
 
     private Integer getPersonId(String nationCode) {
-//        String url = "http://PERSON-SERVICE/person/findByNationalCode";
-//        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url)
-//                .queryParam("nationalCode", nationCode);
-//        HttpHeaders httpHeaders = new HttpHeaders();
-//        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-//        HttpEntity<Object> entity = new HttpEntity<>(httpHeaders);
-//        ResponseEntity<Person> p = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, Person.class);
-//        return p.getBody().getId();
         return personService.findByNationalCode(nationCode).getId();
     }
 }
