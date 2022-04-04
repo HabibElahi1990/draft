@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    config:
+      uri: http://localhost:3030
+  application:
+    name: DRAFT-SERVICE
+  profiles:
+    active: PROD
